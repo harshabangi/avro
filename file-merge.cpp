@@ -63,16 +63,15 @@ class Merge {
          }
       }
 
-      void add(avro::InputStreamPtr inPtr) {
+      void add(avro::InputStreamPtr inPtr, std::ifstream &ifs) {
          avro::DecoderPtr decoder = avro::binaryDecoder();
          decoder->init(*inPtr);
          Header header = loadHeader(decoder);
          saveHeader(encoder, header);
-         while(true) {
+         while(!ifs.eof()) {
             int64_t items = decoder->decodeLong();
-            std::cout << "items: " << items << "\n";
             size_t bytes = (size_t) decoder->decodeLong();
-            std::cout << "bytes: " << bytes << "\n";
+            std::cout << "items: " << items << " bytes: " << bytes << "\n";
             std::vector<uint8_t> buffer = decoder->decodeFixed(bytes);
             std::vector<uint8_t> sync = decoder->decodeFixed(16);
             encoder->encodeLong(items);
@@ -91,9 +90,12 @@ void print(std::vector<uint8_t> arr) {
 
 int main(int argc, char** argv) {
    Merge m = Merge("/Users/harshavardhan/kubernetes-logs/1.avro");
-   std::ifstream ifs("cpx.json");
-   avro::InputStreamPtr in = avro::istreamInputStream(ifs);
-   ifs.close();
-   m.add(avro::fileInputStream("/Users/harshavardhan/kubernetes-logs/part-00000.avro"));
+   //std::ifstream ifs("cpx.json");
+   //avro::InputStreamPtr in = avro::istreamInputStream(ifs);
+   //ifs.eof();
+    std::ifstream ifs("/Users/harshavardhan/kubernetes-logs/part-00000.avro");
+    m.add(avro::istreamInputStream(ifs, 4), ifs);
+    ifs.close();
+   //m.add(avro::fileInputStream("/Users/harshavardhan/kubernetes-logs/part-00000.avro"));
    return 0;
 }
